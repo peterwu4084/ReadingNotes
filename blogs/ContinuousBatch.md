@@ -23,4 +23,5 @@ Continuous batching改进naive batching，不会等待batch内所有的序列预
 ![fig3](./assets/continuous_batch_fig3.png)
 
 ## Code
-[anyscale/llm-continuous-batching-benchmarks](https://github.com/anyscale/llm-continuous-batching-benchmarks)
+* [anyscale/llm-continuous-batching-benchmarks](https://github.com/anyscale/llm-continuous-batching-benchmarks)
+* [vllm_example](https://github.com/ray-project/ray/blob/cc983fc3e64c1ba215e981a43dd0119c03c74ff1/doc/source/serve/doc_code/vllm_example.py)

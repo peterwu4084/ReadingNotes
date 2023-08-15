@@ -34,7 +34,7 @@ Flash attention正是考虑不同内存的读写速率设计的attention算法�
 
 ## Flash Attention
 
-Flash attention的核心在于将 $Q,K,V$ 分割成小块，并将其从较慢的HBM加载到较快的SRAM，通过增量和迭代的方式完成输出$O$的计算。
+Flash attention的核心在于将 $Q,K,V$ 分割成小块，并将其从较慢的HBM加载到较快的SRAM，通过增量和迭代的方式(Tiling)完成输出$O$的计算；通过recomputation完成backward的梯度计算。
 
 * Tiling
 

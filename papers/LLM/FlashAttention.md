@@ -87,7 +87,7 @@ Flash attention的核心在于将 $Q,K,V$ 分割成小块，并将其从较慢�
 
 * Recomputation
     
-    不存储反向bp所需的中间值，通过输出 $O$ 和统计量 $(m, l)$，可以重新计算出中间值 $S,P$。
+    不存储反向bp所需的中间值，通过输出 $O$ 和统计量 $(m, l)$，可以重新计算出中间值 $S,P$ ,其中 $S = QK^T, P=softmax(S)$。
     
 * Algorithm
     ![alg1](./assets/flashattention_alg1.png)

@@ -89,14 +89,16 @@ Flash attention的核心在于将 $Q,K,V$ 分割成小块，并将其从较慢�
     
     不存储反向bp所需的中间值，通过输出 $O$ 和统计量 $(m, l)$，可以重新计算出中间值 $S,P$ ,其中 $S = QK^T, P=softmax(S)$。
     
-* Algorithm
-    ![alg1](./assets/flashattention_alg1.png)
+* Forward & Backward Algorithm
+    ![alg2](./assets/flashattention_alg2.png)
+
+    ![alg4](./assets/flashattention_alg4.png)
 
 * IO Complexity
 
     Theorem 1: Algorithm 1计算 $O=softmax(QK^T)V$ 需要 $O(N^2d)$ 的FLOPs和 $O(N)$的额外内存（不包含输入和输出）。
 
-    Theorem 2: 假设 $N,d,M$ 分别为序列长度、特征长度和SRAM的大小，且 $d\le M\le Nd$。标准attention（Algorithm 1）需要 $O(Nd+N^2)$ 次HBM访问，而flash attention（Algorithm 2）需要 $O(N^2d^2M^{-1})$ 次HBM访问。
+    Theorem 2: 假设 $N,d,M$ 分别为序列长度、特征长度和SRAM的大小，且 $d\le M\le Nd$。标准attention（Algorithm 0）需要 $O(Nd+N^2)$ 次HBM访问，而flash attention（Algorithm 2 & 4）需要 $O(N^2d^2M^{-1})$ 次HBM访问。
 
     Proposition 3: 对于所有的 $M \in [d, Nd]$, 不存在attention算法的HBM访问为 $O(N^2d^2M^{-1})$
 

@@ -1,15 +1,18 @@
 # FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness
 
 ## Motivation
+
 Attention计算需要大量时间和内存，时间和内存复杂度与序列长度呈二次关系。近似attention方法通过牺牲模型表型以减少计算复杂度从而解决上述问题，但是通常无法减少真正的执行时间。这些方法仅考虑了FLOP却忽略了内存访问的开销。而attention的速度主要受内存IO限制，而不是计算限制。
 
 Flash attention正是考虑不同内存的读写速率设计的attention算法，具有更快的执行速度和更小的内存占用。
 
 ## Contribution
+
 * 提出flash attention算法，具有更快的计算速度和内存占用，因而可以实现更快的模型训练和推理以及更大输入序列长度，进而提升模型的表现；
 * 基于flash attention改进的稀疏注意力，可以进一步提升速度和节省内存；
 
 ## Background
+
 * GPU Memory Hierarchy
 
     GPU内存结构包含不同形式的内存，这些内存具有不同的大小和速度，如图1左图所示。
@@ -22,11 +25,11 @@ Flash attention正是考虑不同内存的读写速率设计的attention算法�
 * Naive Attention Implementation
 
     给定输入序列 $Q,K,V\in R^{N\times d}$，其中$N$为序列长度，$d$为特征长度，attention的输出 $O\in R^{N \times d}$ 通过下式计算：
-    
+
     $$S=QK^T\in R^{N\times N}$$
-    
+
     $$P=softmax(S)\in R^{N\times N}$$
-    
+
     $$O=PV\in R^{N\times d}$$
 
     标准attention在GPU上的实现如下所示：
@@ -51,7 +54,7 @@ Flash attention的核心在于将 $Q,K,V$ 分割成小块，并将其从较慢�
     $$softmax(x)=\frac{f(x)}{l(x)}$$
 
     下证明上式 $softmax(x)=\frac{f(x)}{l(x)}$ 的正确性，其中 $x=[x^{(1)}, x^{(2)}]$。
-    
+
     证明：
     $$
     \begin{align*}
@@ -82,14 +85,15 @@ Flash attention的核心在于将 $Q,K,V$ 分割成小块，并将其从较慢�
     $$
 
     证毕
-    
+
     对于 $x=[x^{(1)}, x^{(2)}, ..., x^{(n)}]$，我们可以通过上述方式通过增量计算的方式最终完成 $x$ 的softmax计算。
 
 * Recomputation
-    
+
     不存储反向bp所需的中间值，通过输出 $O$ 和统计量 $(m, l)$，可以重新计算出中间值 $S,P$ ,其中 $S = QK^T, P=softmax(S)$。
-    
+
 * Forward & Backward Algorithm
+
     ![alg2](./assets/flashattention_alg2.png)
 
     ![alg4](./assets/flashattention_alg4.png)

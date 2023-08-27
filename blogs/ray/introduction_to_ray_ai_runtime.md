@@ -103,7 +103,7 @@ Ray AIR封装Ray Data，在训练、调优和推理期间提供分布式数据�
 ``` python
 import ray
 
-if ray.is_initialied:
+if ray.is_initialized:
     ray.shutdown()
 
 ray.init()
@@ -132,4 +132,172 @@ train_dataset = train_dataset.repartition(num_blocks=5)
 valid_dataset = valid_dataset.repartition(num_blocks=5)
 ```
 
-#### 
+#### 数据集预处理
+
+为了将原始数据转换为特征，您将定义一个预处理器 `Preprocesser` 。Ray AIR的 `Preprocessor` 持续的捕获和转换数据:
+
+- 在训练期间
+
+  `Preprocessor` 会被传递给 `Trainer`，拟合并转换输入数据。
+
+- 在调优期间
+
+  每一个 `Trial`会创建自己的 `Preprocessor` 副本。拟合和转换的逻辑在每一个 `Trial`中发生一次。
+
+- 在检查点期间
+
+  如果 `Preprocessor` 被传递到 `Trainer` 中，它会被保存到 `Checkpoint` 中。
+
+- 在推理期间
+
+  如果 `Checkpoint` 包含一个 `Preprocessor`, 那么它将在推理前对批输入调用 `transform_batch`。
+
+``` python
+from ray.data.preprocessors import MinMaxScaler
+
+# 定义一个预处理器，按列的范围对列进行归一化
+preprocessor = MinMaxScaler(columns=['trip_distance', 'trip_duration'])
+```
+
+### 小结
+
+#### 关键概念
+
+- `Dataset`
+
+  在Ray AIR中加载和转换数据的标准方式。在AIR中，`Dataset` 被广泛用于数据加载和转换。它们是连接ETL管道输出到Ray中的分布式应用程序和库的最后桥梁。
+
+- `Preprocessor`
+
+  预处理器是将输入数据转换为特征的原语。它们对数据集进行操作，使其可扩展并与各种数据源和数据框架库兼容。
+
+  预处理器在管道的各个阶段持续存在:
+
+  - 在训练期间拟合和转换数据
+
+  - 存在于超参数调优的每个 `Trial`
+
+  - 存在于检查点中
+
+  - 用于推理的输入批次
+
+AIR附带了一系列内置预处理器，您还可以使用简单的模板定义自己的预处理器。
+
+## Ray Train
+
+### Ray Train介绍
+
+#### 训练中的常见挑战
+
+ML从业者在训练模型中往往会遇到一些常见的问题，这些问题促使他们考虑分布式解决方案:
+
+1. 训练时间太长，不切合实际。
+
+2. 数据太大，一台机器装不下。
+
+3. 按顺序训练多个模型并不能有效地利用资源。
+
+4. 模型本身太大，一台机器装不下。
+
+Ray Train通过分布式多节点训练来提高性能，从而解决了这些问题。
+
+#### 与Ray生态系统集成
+
+Ray Train的 `Trainer` 与Ray生态系统的其余部分集成得很好:
+
+- Ray Data
+
+  - 通过 `Dataset` 和 `Preprocessor` 实现可扩展的数据加载和预处理。
+
+- Ray Tune
+
+  - 与 `Tuner` 实现分布式超参数调优。
+
+- Ray AIR Predictor
+
+  - 在推理过程中作为模型训练的检查点。
+
+- 流行的ML训练框架
+
+  - PyTorch
+
+  - Tensorflow
+
+  - Horovod
+
+  - XGBoost
+
+  - HuggingFace Transformers
+
+  - Scikit-Learn
+
+  - 其他
+
+#### 有用的特性
+
+- 提前停止的回调
+
+- 检查点
+
+- 集成实验跟踪工具，如Tensorboard、Weights & Biases和MLFlow
+
+- 模型的导出机制
+
+在下一节，我们将定义并拟合一个XGBoost训练器来拟合纽约市出租车数据。
+
+#### 定义AIR `Trainer`
+
+Ray AIR提供了各种内置训练器(PyTorch, Tensorflow, HuggingFace等)。在下面的示例中，您将使用Ray `XGBoostTrainer`，它提供了对XGBoost模型的支持。
+
+``` python
+from ray.air.config import ScalingConfig
+from ray.train.xgboost import XGBoostTrainer
+
+trainer = XGBoostTrainer(
+  label_column='is_big_tip',
+  num_boost_round=50,
+  scaling_config=ScalingConfig(
+    num_workers=5,
+    use_gpu=False
+  ),
+  params={
+    'objective': 'binary:logistic',
+    'eval_metric': ['logloss', 'error'],
+    'tree_method': 'approx'
+  },
+  datasets={'train': train_dataset, 'valid': valid_dataset},
+  preprocessor=preprocessor,
+)
+```
+
+要构造一个 `Trainer`，您需要提供三个基本组件:
+
+- `ScalingConfig`，指定多少并行训练工作器和什么类型的资源(cpu / gpu);支持跨异构硬件的无缝扩展。
+
+- 训练集和验证集的字典。
+
+- 用于转换 `Dataset` 的 `Preprocessor`。
+
+您还可以选择添加 `resume_from_checkpoint`，它允许您在运行中断时从保存的检查点继续训练。
+
+#### 拟合训练器
+
+``` python
+# 调用训练
+# 结果对象可以访问训练度量、检查点和错误。
+result = trainer.fit()
+```
+
+### 小结
+
+#### 关键概念
+
+- `Checkpoint`
+
+  定期存储模型的完整状态，使部分训练好的模型可用，并可用于从中间点恢复训练，而不是从头开始;还允许保存最佳模型，以便以后进行批推理。
+
+- `Trainer`
+
+  `Trainer` 是第三训练框架(如XGBoost、Pytorch和Tensorflow)的包装类。它们的构建是为了帮助与Ray Actor(用于分发)、Dataset和Tune集成。
+
+## Ray Tune

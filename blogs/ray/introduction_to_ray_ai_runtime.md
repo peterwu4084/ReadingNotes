@@ -98,7 +98,7 @@ Ray AIR封装Ray Data，在训练、调优和推理期间提供分布式数据�
 
 记住这个通用结构后，接下来您将看到如何将其应用于提示预测任务。
 
-#### Start Ray runtime
+### 初始化Ray
 
 ``` python
 import ray
@@ -115,7 +115,7 @@ ray.init()
 
 - 使用 `Ray .init()` 初始化Ray上下文
 
-#### 创建Ray Datasets
+### 创建Ray Datasets
 
 ``` python
 # Read Parquet file to Ray Dataset
@@ -132,7 +132,7 @@ train_dataset = train_dataset.repartition(num_blocks=5)
 valid_dataset = valid_dataset.repartition(num_blocks=5)
 ```
 
-#### 数据集预处理
+### 数据集预处理
 
 为了将原始数据转换为特征，您将定义一个预处理器 `Preprocesser` 。Ray AIR的 `Preprocessor` 持续的捕获和转换数据:
 
@@ -245,7 +245,7 @@ Ray Train的 `Trainer` 与Ray生态系统的其余部分集成得很好:
 
 在下一节，我们将定义并拟合一个XGBoost训练器来拟合纽约市出租车数据。
 
-#### 定义AIR `Trainer`
+### 定义AIR `Trainer`
 
 Ray AIR提供了各种内置训练器(PyTorch, Tensorflow, HuggingFace等)。在下面的示例中，您将使用Ray `XGBoostTrainer`，它提供了对XGBoost模型的支持。
 
@@ -280,7 +280,7 @@ trainer = XGBoostTrainer(
 
 您还可以选择添加 `resume_from_checkpoint`，它允许您在运行中断时从保存的检查点继续训练。
 
-#### 拟合训练器
+### 拟合训练器
 
 ``` python
 # 调用训练
@@ -301,3 +301,183 @@ result = trainer.fit()
   `Trainer` 是第三训练框架(如XGBoost、Pytorch和Tensorflow)的包装类。它们的构建是为了帮助与Ray Actor(用于分发)、Dataset和Tune集成。
 
 ## Ray Tune
+
+现在您已经训练了一个基线XGBoost模型，您可以尝试通过运行超参数调优实验来提高性能。
+
+### Ray Tune介绍
+
+超参数优化(HPO)是为机器学习模型选择最优超参数的过程。与模型学习的权重相反，超参数是您设置以影响训练的参数。
+
+设置和执行HPO在计算资源和运行时方面可能非常昂贵，其中包括以下几个复杂性:
+
+- 巨大的搜索空间：您的模型可以有几个超参数，每个都有不同的数据类型、范围和可能的相关性。从高维空间中采样是很困难的。
+
+- 搜索算法：策略性地选择超参数需要测试复杂的搜索算法以获得良好的结果。
+
+- 漫长的运行时间：即使分布调优，训练复杂模型本身也需要很长时间才能完成每次运行，因此最好在管道中的每个阶段都有效率。
+
+- 资源分配：在每次试验期间，必须有足够的计算资源可用，以免由于调度不匹配而减慢搜索速度。
+
+- 用户体验：面向开发人员的观察工具，如早期停止错误的运行、保存中间结果、从检查点重新启动或暂停/恢复运行，使HPO变得更容易。
+
+Ray Tune是一个分布式HPO库，它解决了上述所有问题，为运行试验提供了一个简化的接口，并与HyperOpt和Optuna等流行框架集成在一起。
+
+在下一节中，您将了解如何应用这些步骤来优化上一节中创建的基线XGBoost模型。
+
+### 使用AIR `Tuner` 进行超参数搜索
+
+顺便说一句，Ray Tune将为超参数调优提供一个默认的检查点系统。对于特别大的模型，最好设置一个定义检查点策略的 `CheckpointConfig`。特别是，您可以切换 `num_to_keep` 以避免将任何徒劳的试验保存到磁盘上。
+
+``` python
+from ray import tune
+from ray.tune.tuner import Tuner, TuneConfig
+
+# 定义一个超参数搜索空间。
+param_space = {
+  "params": {
+    "eta": tune.uniform(0.2, 0.4), # 学习率
+    "max_depth": tune.randint(1, 6), # 默认6，值越高意味着树越复杂
+    "min_child_weight": tune.qrandint(0.8, 1.0), # 子节点中所有数据的最小权重之和
+  }
+}
+
+tuner = Tuner(
+  trainer,
+  param_space=param_space,
+  tune_config=TuneConfig(
+    num_samples=3,
+    metric='train-logloss',
+    mode='min'
+  )
+)
+```
+
+要设置AIR `Tuner`，您必须指定:
+
+- `Trainer`: 训练器，支持内置在每个Trainer的ScalingConfig中的异构硬件
+
+- `param_space`: 希望调优的一组超参数。
+
+- `TuneConfig`: 设置实验的数量、指标以及是最小化还是最大化。
+
+- `search_algorithm`: 优化参数搜索(可选)。
+
+- `scheduler`: 早停搜索并加速实验(可选)。
+
+### 执行超参数搜索并分析结果
+
+``` python
+result_grid = tuner.fit()
+```
+
+### 小结
+
+#### 关键概念
+
+- `Tuner`
+
+  提供与AIR `Trainer` 一起工作以执行分布式超参数调优的接口。定义一组希望在搜索空间中调优的超参数，指定搜索算法，然后 `Tuner` 在 `ResultGrid` 中返回结果，该 `ResultGrid` 包含每个试验的指标、结果和检查点。
+
+## Ray AIR Predictors
+
+`Ray AIR Predictors` 从训练或调优期间生成的检查点加载模型，以执行分布式推理。
+`BatchPredictor` 是一个用于大规模批处理推理的实用程序，它包含几个组件:
+
+1. `Checkpoint`: 从训练或调优中保存的模型。
+
+2. `Preprocessor`: 先前定义的用于转换输入数据的预处理器，可以重新应用于预测(可选)。
+
+3. `Predictor`: 从检查点加载模型以执行推理。
+
+### 使用AIR `BatchPredictor` 进行批预测
+
+之前，您已经在2021年6月的数据上训练和调整了XGBoost模型。现在，您将从调优中获得最佳检查点，并对2022年6月的出租车小费数据执行离线或批量推理。
+
+``` python
+from ray.train.batch_predictor import BatchPredictor
+from ray.train.xgboost import XGBoostPredictor
+
+test_dataset = ray.data.read_parquet(
+  "s3://anyscale-training-data/intro-to-ray-air/nyc_taxi_2022.parquet"
+).drop_columns("is_big_tip")
+
+test_dataset = test_dataset.repartition(num_blocks=5)
+```
+
+### 从HPO的最佳试验中创建 `BatchPredictor`
+
+``` python
+# 从调优步骤中获得最佳检查点结果。
+best_result = result_grid.get_best_result()
+
+# 从最佳结果创建BatchPredictor并指定一个Predictor类。
+batch_predictor = BatchPredictor.from_checkpoint(
+  checkpoint=best_result.checkpoint, predictor=XGBoostPredictor
+)
+
+# 执行推理。
+# 如果在训练器的ScalingConfig中指定，预测可以跨异构硬件扩展。
+predicted_probabilitites = batch_predictor.predict(
+  test_dataset
+)
+```
+
+### 小结
+
+#### 关键概念
+
+- `BatchPredictor`
+
+  从检查点加载最佳模型，对大规模推理或在线推理执行批推理。
+
+## Ray Serve
+
+最后，您可能希望将这个出租车小费预测应用程序提供给最终用户，希望它具有较低的延迟，从而最大限度地为工作中的司机提供帮助。这带来了挑战，因为机器学习模型是计算密集型的，理想情况下，这个模型不会孤立地服务，而是与业务逻辑甚至其他ML模型相邻。
+
+### Ray Serve介绍
+
+Ray Serve是一个可扩展的计算层，用于服务机器学习模型，它支持服务单个模型或创建复合模型管道，您可以在其中独立部署、更新和扩展单个组件。
+
+Serve没有绑定到特定的机器学习库，而是将模型视为普通的Python代码。
+
+此外，它允许您灵活地将普通Python业务逻辑与机器学习模型结合起来。这使得完全端到端构建在线推理服务成为可能:
+
+- 验证用户输入。
+
+- 查询数据库。
+
+- 跨多个ML模型可扩展地执行推理。
+
+- 在处理单个推理请求的过程中组合、过滤和验证输出。
+
+### 使用 `PredictorDeployment` 进行在线推理
+
+#### 从检查点部署XGBoost模型
+
+``` python
+from ray import serve
+from ray.serve import PredictorDeployment
+from ray.serve.http_adapters import pandas_read_json
+
+# 使用PredictorDeployment将最佳检查点部署为实时端点。
+serve.run(
+  PredictorDeployment.options(
+    name='XGBoostService', num_replicas=2, route_prefix='/rayair'
+  ).bind(XGBoostPredictor, best_result.checkpoint, http_adapter=pandas_read_json)
+)
+```
+
+#### 发送一些测试数据
+
+``` python
+import requests
+
+sample_input = test_dataset.take(1)
+sample_input = dict(sample_input[0])
+
+# 发送http请求。
+output = requests.post(
+  'http://localhost:8000/rayair', json=[sample_input]
+).json()
+print(output)
+```

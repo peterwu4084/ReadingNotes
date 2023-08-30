@@ -102,6 +102,9 @@ serve.run(
     ).bind(XGBoostPredictor, best_result.checkpoint, http_adapter=pandas_read_json)
 )
 
+ray.shutdown()
+
+
 # import requests
 
 # sample_input = test_dataset.take(1)

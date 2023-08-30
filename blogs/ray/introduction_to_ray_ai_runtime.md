@@ -86,7 +86,7 @@ Ray AIR封装Ray Data，在训练、调优和推理期间提供分布式数据�
 
 ### Ray Datasets介绍
 
-在PyArrow的支持下，Ray Datasets并行化了数据的加载和转换，并提供了一种跨射线库和应用程序传递数据引用的标准方式。数据集不打算取代更通用的数据处理系统。相反，它充当了从ETL管道输出到Ray中的分布式应用程序和库的最后桥梁。其关键特征如下：
+在PyArrow的支持下，Ray Datasets并行化了数据的加载和转换，并提供了一种跨射线库和应用程序传递数据引用的标准方式。数据集不打算取代更通用的数据处理系统。相反，它充当了从ETL管道输出到Ray中的分布式应用程序和库的最后一步。其关键特征如下：
 
 - 灵活：数据集与各种文件格式、数据源和分布式框架兼容。它们可以与像Dask这样的库无缝地工作，并且可以在Ray task和actor之间传递而无需复制数据。
 
@@ -165,7 +165,7 @@ preprocessor = MinMaxScaler(columns=['trip_distance', 'trip_duration'])
 
 - `Dataset`
 
-  在Ray AIR中加载和转换数据的标准方式。在AIR中，`Dataset` 被广泛用于数据加载和转换。它们是连接ETL管道输出到Ray中的分布式应用程序和库的最后桥梁。
+  在Ray AIR中加载和转换数据的标准方式。在AIR中，`Dataset` 被广泛用于数据加载和转换。它们是连接ETL管道输出到Ray中的分布式应用程序和库的最后一步。
 
 - `Preprocessor`
 
@@ -481,3 +481,54 @@ output = requests.post(
 ).json()
 print(output)
 ```
+
+### 关闭Ray
+
+``` python
+# 断开工作器的连接，并终止由ray.init()启动的进程。
+ray.shutdown()
+```
+
+### 小结
+
+#### 关键概念
+
+- `Deployments`
+
+  一组被管理的Ray actor，它们可以被一起处理，并在它们之间平衡负载请求。
+
+## 总结
+
+现在，您已经创建了一个Ray Dataset，预处理了一些特征，用XGBoost构建了一个模型，在超参数空间中搜索最佳配置，从检查点加载最佳模型以执行批处理推理，并将该模型用于在线推理。
+
+通过这个端到端示例，您探索了如何使用Ray AIR来分发整个ML管道。
+
+### 关键概念
+
+- `Dataset`
+
+  在Ray AIR中加载和转换数据的标准方式。在AIR中，数据集被广泛用于数据加载和转换。它们是连接ETL管道输出到Ray中的分布式应用程序和库的最后一步。
+
+- `Preprocessor`
+
+  预处理器是将输入数据转换为特征的基础元素。它们对数据集进行操作，使其可扩展并与各种数据源和数据框架库兼容。
+
+- `Checkpoint`
+
+  定期存储模型的完整状态，使部分训练好的模型可用，并可用于从中间点恢复训练，而不是从头开始;还允许保存最佳模型，以便以后进行批推理。
+
+- `Trainer`
+
+  Trainer是第三方培训框架(如XGBoost、Pytorch和Tensorflow)的包装类。它们的构建是为了帮助与Ray actor(用于分发)、Ray Dataset和Ray Tune集成。
+
+- `Tuner`
+
+  提供与AIR Trainer一起工作以执行分布式超参数调优的接口。定义一组希望在搜索空间中调优的超参数，指定搜索算法，然后Tuner在ResultGrid中返回结果，该ResultGrid包含每个试验的指标、结果和检查点。
+
+- `BatchPredictor`
+
+  从检查点加载最佳模型，对大规模推理或在线推理执行批推理。
+
+- `Deployments`
+
+  一组被管理的Ray actor，它们可以被一起处理，并在它们之间平衡负载请求。

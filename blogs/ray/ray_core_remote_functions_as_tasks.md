@@ -204,6 +204,12 @@ print(f"Distributed execution time: {end - start:5f}") # 13.73
 
 PyTorch `torchvision。transforms` API提供了许多变换API。我们将在这里使用几个，以及一些numpy和torch.tensor的操作。我们的任务将执行以下计算密集型变换：
 
-1. 使用PIL api来模糊图像
+1. 使用PIL api来模糊图像；
 
-2. 使用pytorch的
+2. 使用pytorch的 `TrivalAugmentWide`；
+
+3. 将图像转换为numpy array和pytorch tensor，并执行numpy和torch张量操作，例如转置、乘法；
+
+4. 指数幂和与张量相乘；
+
+我们的目标是比较串行运行这些任务和作为一个Ray任务分布式运行这些任务的执行时间。

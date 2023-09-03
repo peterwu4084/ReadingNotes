@@ -78,3 +78,132 @@ if ray.is_initialized:
     ray.shutdown()
 ray.init(logging_level=logging.ERROR)
 ```
+
+## 例1: 生成斐波那契数列
+
+让我们定义两个函数:一个串行运行，另一个在Ray集群(本地或远程)上运行。这个例子是从我们的博客中借用和重构的:[用Ray编写你的第一个分布式Python应用程序](https://www.anyscale.com/blog/writing-your-first-distributed-python-application-with-ray)。(这是一个很好的教程，从为什么和何时使用Ray tasks和actors的概念开始。强烈推荐阅读!)
+
+``` python
+SEQUENCE_SIZE = 100000
+
+# 本地执行的函数
+def generate_fibonacci(sequence_size):
+    fibonacci = []
+    for i in range(0, sequence_size):
+        if i < 2:
+            fibonacci.append(i)
+            continue
+        fibonacci.append(fibonacci[i - 1] + fibonacci[i - 2])
+    return len(fibonacci)
+
+# 用于远程Ray task的函数
+@ray.remote
+def generate_fibonacci_distributed(sequence_size):
+    return generate_fibonacci(sequence_size)
+
+# 获取内核的数量
+print(os.cpu_count()) # 16
+
+# 单个进程中的普通Python
+def run_local(sequence_size):
+    results = [generate_fibonacci(sequence_size) for _ in range(os.cpu_count())]
+
+# 分布在Ray集群上
+def run_remote(sequence_size):
+    results = ray.get([generate_fibonacci_distributed.remote(sequence_size) for _ in range(os.cpu_count())])
+    return results
+
+start = time.time()
+run_local(SEQUENCE_SIZE)
+end = time.time()
+
+print(f"Local: {end - start}") # 4.63s
+
+start = time.time()
+run_remote(SEQUENCE_SIZE)
+end = time.time()
+print(f"Remote: {end - start}") # 2.55s
+```
+
+正如你所看到的，作为Ray Tasks运行时，我们只需添加一个Python装饰器  `Ray .remote` 就可以显著提升性能📈。
+
+## 例2: 用蒙特卡罗方法计算 $\pi$
+
+让我们用蒙特卡罗方法估计 $\pi$ 的值。我们随机抽取2x2平方内的点。我们可以使用以原点为中心的单位圆内包含的点的比例来估计圆的面积与正方形的面积之比。
+
+假设我们知道真实的比率是π/4，我们可以将估算的比率乘以4来近似 $\pi$ 的值。我们在计算这个近似值时采样的点越多，我们就越接近 $\pi$ 的真实值和所需的小数点。
+
+定义一个通常的函数来计算圆中的样本数。这是通过在 $(-1,1)$的统一值之间随机抽样 `num_samples` 个 $x, y$ 的来完成的。使用 `math.hypot`` 函数，我们计算d点是否落在圆内。
+
+``` python
+NUM_SAMPLING_TASKS = os.cpu_count()
+NUM_SAMPLES_PER_TASK = 10_000_000
+TOTAL_NUM_SAMPLES = NUM_SAMPLING_TASKS * NUM_SAMPLES_PER_TASK
+
+def sampling_task(num_samples: int, task_id: int, verbose=True) -> int:
+    num_inside = 0
+    for i in range(num_samples):
+        x, y = random.uniform(-1, 1), random.uniform(-1, 1)
+        if math.hypot(x, y) <= 1:
+            num_inside += 1
+    if verbose:
+        print(f"Task id: {task_id} | Samples in the circle: {num_inside}")
+    return num_inside
+```
+
+定义一个函数，通过在一个推导式列表中启动 `NUM_SAMPLING_TASKS` 串行任务来串行地运行这个任务。
+
+``` python
+def run_serial(sample_size) -> List[int]:
+    results = [sampling_task(sample_size, i) for i in range(NUM_SAMPLING_TASKS)]
+    return results
+```
+
+通过远程Ray任务来运行，它调用我们的采样函数，但是因为它是用@ray装饰的。远程时，任务将在Ray集群上绑定到一个核心的工作进程上运行。
+
+``` python
+@ray.remote
+def sample_task_distributed(sample_size, i) -> object:
+    return sampling_task(sample_size, i)
+
+def run_distributed(sample_size) -> List[int]:
+    # 在一个推导式列表中启动Ray远程任务，每个任务立即返回一个未来的ObjectRef
+    # 使用ray.get获取计算值；这将阻塞直到ObjectRef被解析或它的值被具体化。
+    results = ray.get([sample_task_distributed.remote(sample_size, i) for i in range(NUM_SAMPLING_TASKS)])
+    return results
+```
+
+定义一个函数，通过从采样任务中获取圆内的所有样本数来估计 $\pi$ 的值。
+
+``` python
+def calculate_pi(results: List[int]) -> float:
+    return 4 * sum(results) / TOTAL_NUM_SAMPLES
+
+# 串行计算π
+start = time.time()
+results = run_serial(NUM_SAMPLES_PER_TASK)
+pi = calculate_pi(results)
+end = time.time()
+print(f"Estimated value of pi is: {pi:5f}")
+print(f"Serial execution time: {end - start:5f}") # 76.42
+
+# 分布式计算π
+start = time.time()
+results = run_distributed(NUM_SAMPLES_PER_TASK)
+pi = calculate_pi(results)
+end = time.time()
+print(f"Estimated value of pi is: {pi:5f}")
+print(f"Distributed execution time: {end - start:5f}") # 13.73
+```
+
+在Ray中，我们看到速度加快了~6X。
+
+## 例3: 如何使用Ray分布式任务进行图像变换和计算
+
+对于本例，我们将通过变换和计算大型高分辨率图像来模拟计算密集型任务。这些任务在训练DNN图像分类中并不少见。
+
+PyTorch `torchvision。transforms` API提供了许多变换API。我们将在这里使用几个，以及一些numpy和torch.tensor的操作。我们的任务将执行以下计算密集型变换：
+
+1. 使用PIL api来模糊图像
+
+2. 使用pytorch的

@@ -213,3 +213,71 @@ PyTorch `torchvision。transforms` API提供了许多变换API。我们将在这
 4. 指数幂和与张量相乘；
 
 我们的目标是比较串行运行这些任务和作为一个Ray任务分布式运行这些任务的执行时间。
+
+定义一些常量，这些常量可以作为练习的一部分进行调整，以进行不同批大小的实验。
+
+``` python
+import tasks_helper_utils as t_utils
+
+DATA_DIR = Path(os.getcwd() + "/task_images")
+BATCHES = [10, 20, 30, 40, 50]
+SERIAL_BATCH_TIMES = []
+DISTRIBUTED_BATCH_TIMES = []
+
+# 定义一个Ray task来转换，增强和执行一些计算密集型的任务
+@ray.remote
+def augment_image_distributed(image_ref: object, fetch_image) -> List[object]:
+    return t_utils.transform_image(image_ref, fetch_image)
+
+# 定义一个函数，在单个节点、单个核心上串行地运行这些转换任务
+def run_serially(img_list_refs: List) -> List[Tuple[int, float]]:
+    transform_results = [t_utils.transform_image(image_ref, fetch_image=True) for image_ref in tqdm.tqdm(img_list_refs)]
+    return transform_results
+
+# 定义函数以分布式地运行这些转换任务
+def run_distributed(img_list_refs: List[object]) -> List[Tuple[iint, float]]:
+    return ray.get([augment_image_distributed.remote(image_ref, False) for img in tqdm.tqdm(img_list_refs)])
+```
+
+让我们下载100张大图片，每张图片的大小在5-20mb以上，分辨率大于(4000、3500)像素。它只会下载一次。
+
+``` python
+# 检查文件夹是否存在。如果是，忽略下载。
+if not os.path.exists(DATA_DIR):
+    os.mkdir(DATA_DIR)
+    print(f"downloading images...")
+    for url in tqdm.tqdm(t_utils.URLS):
+        t_utils.download_file(url, DATA_DIR)
+
+# 获取整个图像列表      
+image_list = list(DATA_DIR.glob("*.jpg"))
+```
+
+由于我们的图像很大，让我们把它们放在Ray Distributed对象存储中。
+
+``` python
+# 将所有图像放入对象存储中。因为Ray任务可能是分布
+# 在不同的机器上，工作线程上可能没有DATA_DIR。然而,
+# 将它们放入Ray分布式对象器中，可以在Ray worker上
+# 访问任何调度远程任务
+image_list_refs = [t_utils.insert_into_object_store(image) for image in image_list]
+```
+
+我们将以10个批次(这可以更改为20或25等)迭代图像并处理它们。为了模拟图像上的计算机密集型操作，我们正在进行上面描述的张量变换和计算。
+
+``` python
+for idx in BATCHES:
+    # 使用索引获取N个指向图像的url
+    image_batch_list_refs = image_list_refs[:idx]
+    print(f"\nRunning {len(image_batch_list_refs)} tasks serially ...")
+    
+    # 串行运行
+    start = time.perf_counter()
+    serial_results = run_serially(image_batch_list_refs)
+    end = time.perf_counter()
+    elapsed = end - start
+    
+    # 以元组的形式跟踪批处理、执行时间
+    SERIAL_BATCH_TIMES.append((idx, round(elapsed, 2)))
+    print(f"Serial transformation/computations of {len(image_batch_list_refs)} images: {elapsed:.2f}) sec")
+```

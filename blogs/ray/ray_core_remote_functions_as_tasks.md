@@ -235,8 +235,8 @@ def run_serially(img_list_refs: List) -> List[Tuple[int, float]]:
     return transform_results
 
 # 定义函数以分布式地运行这些转换任务
-def run_distributed(img_list_refs: List[object]) -> List[Tuple[iint, float]]:
-    return ray.get([augment_image_distributed.remote(image_ref, False) for img in tqdm.tqdm(img_list_refs)])
+def run_distributed(img_list_refs: List[object]) -> List[Tuple[int, float]]:
+    return ray.get([augment_image_distributed.remote(image_ref, False) for image_ref in tqdm.tqdm(img_list_refs)])
 ```
 
 让我们下载100张大图片，每张图片的大小在5-20mb以上，分辨率大于(4000、3500)像素。它只会下载一次。
@@ -247,7 +247,7 @@ if not os.path.exists(DATA_DIR):
     os.mkdir(DATA_DIR)
     print(f"downloading images...")
     for url in tqdm.tqdm(t_utils.URLS):
-        t_utils.download_file(url, DATA_DIR)
+        t_utils.download_images(url, DATA_DIR)
 
 # 获取整个图像列表      
 image_list = list(DATA_DIR.glob("*.jpg"))
@@ -281,3 +281,35 @@ for idx in BATCHES:
     SERIAL_BATCH_TIMES.append((idx, round(elapsed, 2)))
     print(f"Serial transformation/computations of {len(image_batch_list_refs)} images: {elapsed:.2f}) sec")
 ```
+
+让我们为每个批处理中的图像创建一个Ray task并处理它们。由于我们的图像很大，并且存在于Ray 分布对象存储中，我们在任何工作器节点上调度的Ray task都可以访问它们。
+
+``` python
+# 迭代批次，为处理中的每个图像启动Ray task
+for idx in BATCHES:
+    image_batch_list_refs = image_list_refs[:idx]
+    print(f"\nRunning {len(image_batch_list_refs)} tasks distributed...")
+
+    # 依次运行每一个
+    start = time.perf_counter()
+    distributed_results = run_distributed(image_batch_list_refs)
+    end = time.perf_counter()
+    elapsed = end - start
+
+    # 以元组的形式跟踪批处理和执行时间
+    DISTRIBUTED_BATCH_TIMES.append((idx, round(elapsed, 2)))
+    print(f"Distributed transformation/computations of {len(image_batch_list_refs)} images: {elapsed:.2f}) sec")
+```
+
+比较和绘制串行与分布式的计算时间
+
+``` python
+# 打印每一项的时间，并绘制它们以便比较
+print(f"Serial times & batches     : {SERIAL_BATCH_TIMES}")
+print(f"Distributed times & batches: {DISTRIBUTED_BATCH_TIMES}")
+t_utils.plot_times(BATCHES, SERIAL_BATCH_TIMES, DISTRIBUTED_BATCH_TIMES)
+
+ray.shutdown()
+```
+
+我们可以清楚地观察到，Ray task的总体执行时间比串行计算要快~2倍🚅。转换现有的串行计算密集型Python函数只需在Python函数中添加ray.remote。Ray将处理所有的难点：调度、执行、扩展、内存管理等。

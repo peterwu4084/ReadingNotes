@@ -1,4 +1,4 @@
-# Ray Core导览: 远程任务
+# A Guided Tour of Ray Core: Remote Tasks
 
 ## 介绍
 

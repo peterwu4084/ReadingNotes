@@ -5,3 +5,5 @@
 2. [Introduction to Ray AI Runtime](./introduction_to_ray_ai_runtime.md)
 
 3. [Ray Core: Remote Functions as Tasks](./ray_core_remote_functions_as_tasks.md)
+
+4. [Ray Core: Remote Objects](./ray_core_remote_objects.md)

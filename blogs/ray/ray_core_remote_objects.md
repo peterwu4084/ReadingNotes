@@ -107,3 +107,74 @@ print(transformed_tensor_values[:2])
 Ray的对象存储是一个跨Ray集群的共享内存存储。每个Ray节点上的工作器都有自己的对象存储，他们可以使用简单的Ray api `ray.put` 和 `ray.get`，来插入值和获取由Ray任务或Actor方法创建的Ray对象的值。总的来说，每个节点的这些单独的对象存储构成了一个共享的分布式对象存储。
 
 在上面的练习中，我们创建了随机张量，将它们插入到我们的对象存储中，通过迭代每个ObjectRefID对它们进行转换，将这个ObjectRefID发送给一个Ray任务，然后获取每个Ray远程任务返回的转换张量。
+
+### 传递对象
+
+Ray对象引用可以在Ray应用程序中自由传递。这意味着它们可以作为参数传递给task、actor的方法，甚至存储在其他对象中。通过分布式引用计数跟踪对象，一旦删除对对象的所有引用，就会自动释放对象的数据。
+
+``` python
+# 定义任务
+@ray.remote
+def echo(x):
+    print(f"current value of argument x: {x}")
+
+# 定义一些变量
+x = list(range(10))
+obj_ref_x = ray.put(x)
+y = 25
+```
+
+#### 按值传递
+
+将对象作为顶级参数发送给任务。对象将自动取消引用，因此任务只能看到它的值。
+
+``` python
+# 作为值参数传递y
+echo.remote(y)
+
+# 传递一个对象引用
+# 注意，echo函数对它进行了区分
+echo.remote(obj_ref_x)
+```
+
+#### 按引用传递
+
+当参数在Python列表中传递或作为任何其他数据结构传递时，对象ref将被保留，这意味着它不会被取消引用。对象数据通过引用传递时不会传输到工作器，直到在引用上调用 `ray.get()`。
+
+您可以通过两种方式传递引用:
+
+1. 作为字典 `.remote({"obj": obj_ref_x})`
+
+2. 作为列表 `.remote([obj_ref_x])`
+
+``` python
+x = list(range(20))
+obj_ref_x = ray.put(x)
+
+echo.remote({"obj": obj_ref_x})
+echo.remote([obj_ref_x])
+```
+
+### 长时间运行的任务呢?
+
+有时，您可能会有长时间运行的任务，由于某些问题超过了预期时间，可能在访问对象存储中的变量时受阻。如何退出或终止它？使用timeout。
+
+现在让我们设置一个timeout，以便在尝试访问阻塞时间过长的远程对象时提前返回。您可以控制等待任务完成的时间。
+
+``` python
+import time
+from ray.exceptions import GetTimeoutError
+
+@ray.remote
+def long_running_task():
+    time.sleep(10)
+    return 42
+
+obj_ref = long_running_task.remote()
+try:
+    ray.get(obj_ref, timeout=6)
+except GetTimeoutError:
+    print("`get` timed out")
+```
+
+## 

@@ -177,4 +177,101 @@ except GetTimeoutError:
     print("`get` timed out")
 ```
 
-## 
+## 例2：如何使用task和对象存储进行分布式批推理
+
+批推理是机器学习中常见的分布式应用工作负载。这是一个使用经过训练的模型对一系列观察结果进行预测的过程。主要有以下几个要素：
+
+- 输入数据集：这是一个需要进行预测的大量观测集合。数据通常存储在外部存储系统中，如S3、HDFS或数据库。
+
+- ML模型：这是一个经过训练的ML模型，通常也存储在外部存储系统或模型存储中。
+
+- 预测：这些是将ML模型应用于观察时的输出。通常，预测结果通常被写回存储系统。
+
+为此，我们作出以下规定：
+
+- 创建一个虚拟模型，返回一些虚假的预测
+
+- 使用真实的纽约市出租车数据，为批量推理提供大数据集
+
+- 返回预测结果，而不是将其写回磁盘
+
+作为一个称为Different Data Same Function(DDSF)的扩展模式的例子，也称为分布式数据并行(DDP)，我们在此图中的函数是预训练模型，数据被分割并作为分片分布。
+
+![DDSF](./assets/ddsf.png)
+
+定义一个Python闭包来加载我们的预训练模型。这个模型只是一个假模型，它预测小费是否有必要根据集体乘车的人数(2人或以上)来决定。
+
+注意：这个预测是假的。真实的模型将调用model的model.predict(input_data)。然而，对于这个例子来说，这已经足够了。
+
+``` python
+def load_trained_model():
+    def model(batch: pd.DataFrame) -> pd.DataFrame:
+        model.payload = np.arange(10, 10_000, dtype=float)
+        
+        model.cls = 'regression'
+        predict = batch['passenger_count'] >= 2
+        return pd.DataFrame({'score': predict})
+    return model
+
+# 让我们定义一个Ray任务来处理NYC文本数据的每个分片
+@ray.remote
+def make_model_batch_predictions(model, shard_path, verbose=False):
+    if verbose:
+        print(f'Batch inference for shard file: {shard_path}')
+    df = pq.read_table(shard_path).to_pandas()
+    result = model(df)
+
+    return result
+
+# 获得12个文件组成的纽约市数据
+input_files = [
+    f"s3://anonymous@air-example-data/ursa-labs-taxi-data/downsampled_2009_full_year_data.parquet"
+    f"/fe41422b01c04169af2a65a83b753e0f_{i:06d}.parquet" for i in range(12)
+]
+```
+
+### 将模型插入到对象存储中
+
+`Ray.put()` 将模型放到本地对象存储中，然后将引用传递给远程任务。
+
+如果像`make_model_prediction.remote(model, file)` 这样传递模型本身，效率将非常低。为了将模型传递给远程节点，它将隐式地为每个任务执行 `ray.put(model)`，这可能会压倒本地对象存储并导致内存不足。
+
+相反，我们将只传递一个引用，并且调度任务所在的节点将服从它。
+
+这是Ray核心API，用于将对象放入Ray存储。
+
+``` python
+# 获取模型
+model = load_trained_model()
+
+# 将模型对象放入共享对象存储库。
+model_ref = ray.put(model)
+print(model_ref)
+
+# List用于保存从模型预测返回的所有对象引用
+result_refs = []
+
+# 启动所有预测任务。为每个文件创建一个Ray远程任务来进行批推理
+for file in input_files:
+    # 通过传递模型引用和分片文件来启动预测任务。
+    result_refs.append(make_model_batch_predictions.remote(model_ref, file))
+
+# 获取所有预测结果
+results = ray.get(result_refs)
+
+# 让我们检查预测和输出大小。
+for r in results:
+    print(f"Predictions dataframe size: {len(r)} | Total score for tips: {r['score'].sum()}")
+
+ray.shutdown()
+```
+
+## 总结
+
+我们讲了如何
+
+- 使用Ray task, `ray.get` 和 `ray.put`
+
+- 了解分布式远程对象存储
+
+- 从对象存储访问对象进行转换

@@ -7,3 +7,5 @@
 3. [Ray Core: Remote Functions as Tasks](./ray_core_remote_functions_as_tasks.md)
 
 4. [Ray Core: Remote Objects](./ray_core_remote_objects.md)
+
+5. [Ray Core: Remote Stateful Classes](./ray_core_remote_stateful_classes.md)

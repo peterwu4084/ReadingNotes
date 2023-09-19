@@ -9,3 +9,7 @@
 4. [Ray Core: Remote Objects](./ray_core_remote_objects.md)
 
 5. [Ray Core: Remote Stateful Classes](./ray_core_remote_stateful_classes.md)
+
+6. [Ray Core: Tree of Actors](./ray_core_tree_of_actors.md)
+
+7. [Ray Core: Ray API Best Practices](./ray_core_ray_api_best_practices.md)

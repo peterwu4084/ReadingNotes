@@ -110,6 +110,8 @@ print(ray.get([CALLERS_CLS_DICT[name].get_all_method_calls.remote() for name in 
 ray.shutdown()
 ```
 
+在上面的例子中，我们看到了如何使用actor来跟踪调用它的方法的次数。如果您有兴趣获取作为服务部署的actor的使用，那么这可能是遥测数据的一个有用示例。
+
 ### 示例2:使用Actor跟踪进度
 
 问题：在我们的第一个教程中，我们探索了如何仅使用任务来近似 $\pi$ 的值。在这个例子中，我们通过定义一个Ray actor来扩展它，这个actor可以被我们的Ray采样任务调用来更新进度。采样Ray任务向Ray actor发送消息(通过方法调用)以更新进度。
@@ -194,3 +196,7 @@ print(f"Estimated value of pi: {pi}")
 
 ray.shutdown()
 ```
+
+Ray Actors是有状态的，它们的方法可以被调用来传递消息或改变类的内部状态。Actor被安排在一个专用的Ray节点的工作进程中。因此，所有actor的方法都在特定的工作进程上执行。
+
+我们演示了如何使用actor来跟踪某些Ray任务的进度；在我们的例子中，我们跟踪射线任务的进度近似$ $\pi$ 的值。

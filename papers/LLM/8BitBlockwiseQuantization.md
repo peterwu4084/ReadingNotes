@@ -1,5 +1,13 @@
 # 8-Bit Optimizers via Block-wise Quantization
 
+## Motivation
+
+训练大模型需要大量的内存，而如何减少优化器的内存占用还没有有效的解决方案。
+
+## Contribution
+
+
+
 SGD with momentum and Adam limit the max size fo models.
 
 Develop the first optimizers using 8-bit statistics while maintaining the performance levels of 32-bit.

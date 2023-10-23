@@ -2,7 +2,7 @@
 
 ## Motivation
 
-训练大模型需要大量的内存，而如何减少优化器的内存占用还没有有效的解决方案。已有工作者在16位优化器上进行尝试，但8位优化器仍没有成功的工作。8位优化器存在如下三个挑战：
+训练大模型需要大量的内存，其中优化器占用了很大的比例，而如何减少优化器的内存占用还没有有效的解决方案。已有工作者在16位优化器上进行尝试，但8位优化器仍没有成功的工作。同时，8位优化器存在如下三个挑战：
 
 1. 量化准确率：维持高精度，必须使用非线性量化，减少出现频率高的小幅度值和罕见的大幅度值。
 
@@ -10,32 +10,21 @@
 
 3. 大模型稳定性：为了维持稳定的训练，量化方法不仅需要有较低的平均量化误差，同时最差情况下也要有较好的表现。
 
- 
-
 ## Contribution
 
+- 提出基于块的量化方法：将张量分块，并对每块进行单独量化。该方法存在以下优点：
 
+  - 因为异常值被隔离在特定的块中，减弱异常值的影响，提升性能和稳定性。
 
-SGD with momentum and Adam limit the max size fo models.
+  - 不同的块可以并行量化，提升速度。
 
-Develop the first optimizers using 8-bit statistics while maintaining the performance levels of 32-bit.
+- 结合两个新的方法提升稳定性：
 
-Block-wise dynamic quantization:
+  - 动态量化（dynamic quantization），基于动态树量化针对无符号数据的一种拓展。
 
-1. split input tensors into blocks and performs quantization on each block indenpently
+  - 稳定嵌入层，标准嵌入层的拓展，通过归一化高度非均匀分布以支持更好的量化，避免极端梯度。
 
-2. combine with two novel methods for stable:
-
-   - dynamic quantization
-   - stable embedding layer
-
-hard points
-
-1. quantization acc: critical non-linear quantization
-
-2. compute efficiency: non-linear is difficult to be fast
-
-3. large-scale stability: not only good mean error but also excellent worse case performance
+- 该8位优化器和32位优化器具有相同的表现，内存占用更少。
 
 ## Background
 

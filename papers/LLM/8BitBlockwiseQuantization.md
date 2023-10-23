@@ -32,7 +32,7 @@
 
 ![optimizer](./assets/blockwiseQ_optimizer.png)
 
-For 32-bit states, Momentum and Adam consume 4 and 8 bytes per parameter.
+对于32位优化器，Momentum和Adam每个参数分别消耗4和8个字节
 
 ### Non-Linear Quantization
 

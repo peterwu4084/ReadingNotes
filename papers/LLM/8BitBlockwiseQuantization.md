@@ -64,13 +64,36 @@
 
 ## 8-Bit Optimizers
 
-1. dequantize 8-bit optimizer states to 32-bit, element-by-element in registers
-
-2. perform update
-
-3. quantize the states back to 8-bit for storage
+提出的8位优化器，包括三个组成：基于块的量化方法、动态量化、稳定嵌入层。更新优化器状态时需要将8位优化器的状态量反量化为32位，然后再进行更新，最后将32位优化器的状态量量化为8位。
 
 ### Blockwise Quantization
 
-reduce the cost of computing normalization and improve quantization precision by isolating outliers.
+对于一个张量T，将其视为一维向量，以B的大小将其分成一个个小块。分别在每个小块上计算最大值（绝对值）进行归一化，然后进行量化。分块量化有以下两点好处：
 
+1. 每个块计算独立，方便并行。
+
+2. 对输入张量中的异常值进行隔离，减少量化误差。且对最大值没有量化误差。
+
+### Bynamic Quantization
+
+由于Adam优化器中第二状态值严格为正，且实验观察其在训练过程中的变化范围约3-5个数量级，因此对第二状态值的量化，去掉符号位并使用固定的小数位。
+
+### Stable Embedding Layer
+
+使用Xavier uniform初始化对嵌入层进行初始化，然后使用layer norm归一化，最后和位置编码相加。嵌入层使用32位优化器优化，这对于维持训练稳定至关重要。
+
+## Experiments
+
+提出的方法可以维持32位优化器的表现，同时降低现存占用。
+
+![table1](./assets/blockwiseQ_table1.png)
+
+![table2](./assets/blockwiseQ_table2.png)
+
+消融实验结果如下所示，所使用的三个技术对于8bit训练的精度和稳定性至关重要：
+
+![table3](./assets/blockwiseQ_table3.png)
+
+敏感度分析，不同的超参数下，8bit训练结果变化趋势与32bit训练变化类似。
+
+![fig3](./assets/blockwiseQ_fig3.png)

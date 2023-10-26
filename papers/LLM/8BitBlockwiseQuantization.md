@@ -80,11 +80,11 @@
 
 ### Stable Embedding Layer
 
-使用Xavier uniform初始化对嵌入层进行初始化，然后使用layer norm归一化，最后和位置编码相加。嵌入层使用32位优化器优化，这对于维持训练稳定至关重要。
+使用Xavier uniform初始化对嵌入层进行初始化，然后使用layer norm归一化，最后和位置编码相加。嵌入层使用32位优化器优化，这对于维持训练稳定至关重要。(一个batch内不同token出现的频率不同，出现频率很高的token可能累计很大的梯度。)
 
 ## Experiments
 
-提出的方法可以维持32位优化器的表现，同时降低现存占用。
+提出的方法可以维持32位优化器的表现，同时降低现存占用和训练时间。
 
 ![table1](./assets/blockwiseQ_table1.png)
 

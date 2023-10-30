@@ -78,3 +78,9 @@ $$ PE(pos, 2i+1) = cos(pos/10000^{2i/d_{model}}) $$
 部分实验结果如下：
 
 ![exp](./assets/attention_exp.png)
+
+## reference
+
+1. [Attention is All You Need](https://arxiv.org/abs/1706.03762)
+
+2. [The Illustrated Transformer](http://jalammar.github.io/illustrated-transformer/)

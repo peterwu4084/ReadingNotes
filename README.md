@@ -14,6 +14,10 @@
 
 * TODO [Textbooks Are All You Need II: phi-1.5 technical report](./papers/LLM/Phi1.5.md) [[paper](https://arxiv.org/abs/2309.05463)]
 
+#### Knowledge distillation
+
+* [Zephyr: Direct Distillation of LM Alignment](./papers/LLM/distillation/Zephyr.md) [[paper](https://arxiv.org/abs/2310.16944)]
+
 ## Blog notes
 
 * [GPU Performance Background User's Guide](./blogs/GPUPerformanceBackgroundUserGuide.md) [[blog](https://docs.nvidia.com/deeplearning/performance/dl-performance-gpu-background/index.html#undefined)]

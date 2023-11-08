@@ -48,7 +48,7 @@
 
 使用Mistral 7B作为基础模型进行全量微调。dSFT微调阶段使用UltraChat数据进行微调，微调1个epoch，AIF数据生成使用UltraFeedback数据的提示词，回答由四个LLM生成，并有GPT4进行打分。dDPO微调3个epoch。s
 
-模型评价使用MT-Bench、AlpacaEval和Open LLM leaderboard，和不同大小的开源模型和闭源模型进行对比。对比结果如下：
+模型评价使用MT-Bench（八个维度使用GPT4打分，10分制）、AlpacaEval（使用GPT4评分，结果显示与text-davinci-003对比的胜率）和Open LLM leaderboard（四个多分类任务），和不同大小的开源模型和闭源模型进行对比。对比结果如下：
 
 ![mtbench](./assets/zephyr_mtbench.png)
 

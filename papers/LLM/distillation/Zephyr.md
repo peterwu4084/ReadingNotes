@@ -36,4 +36,24 @@
 
 3. Distilled Direct Preference Optimization (dDPO)
 
+   使用DPO (Direct Preference Optimization) 替代强化学习优化 $\pi_{dSFT}$ 模型。使用dSFT模型初始化dDPO模型，对于每一个AIF样本 $(x, y_w, y_l)$：
    
+   1. 使用dSFT模型计算 $(x, y_w)$ 和 $(x, y_l)$ 的概率（仅前向传播）；
+   2. 使用dDPO模型计算 $(x, y_w)$ 和 $(x, y_l)$ 的概率；
+   3. 计算以下公式优化参数；
+
+   $$ \pi_\theta = max_\pi E_{(x,y_w,y_l)}\ log\sigma(\beta log\frac{\pi(y_w|x)}{\pi_{dSFT}(y_l|x)}-\beta log\frac{\pi(y_l|x)}{\pi_{dSFT}(y_l|x)})$$
+
+## Experiment
+
+使用Mistral 7B作为基础模型进行全量微调。dSFT微调阶段使用UltraChat数据进行微调，微调1个epoch，AIF数据生成使用UltraFeedback数据的提示词，回答由四个LLM生成，并有GPT4进行打分。dDPO微调3个epoch。s
+
+模型评价使用MT-Bench、AlpacaEval和Open LLM leaderboard，和不同大小的开源模型和闭源模型进行对比。对比结果如下：
+
+![mtbench](./assets/zephyr_mtbench.png)
+
+![results](./assets/zephyr_results.png)
+
+![openllmleaderboard](./assets/zephyr_openllmleaderboard.png)
+   
+在7b模型中，Zephyr的表现是最优的。部分指标可以与更大的模型相媲美。

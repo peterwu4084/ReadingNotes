@@ -37,7 +37,7 @@
 3. Distilled Direct Preference Optimization (dDPO)
 
    使用DPO (Direct Preference Optimization) 替代强化学习优化 $\pi_{dSFT}$ 模型。使用dSFT模型初始化dDPO模型，对于每一个AIF样本 $(x, y_w, y_l)$：
-   
+
    1. 使用dSFT模型计算 $(x, y_w)$ 和 $(x, y_l)$ 的概率（仅前向传播）；
    2. 使用dDPO模型计算 $(x, y_w)$ 和 $(x, y_l)$ 的概率；
    3. 计算以下公式优化参数；

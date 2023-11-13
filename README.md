@@ -16,6 +16,8 @@
 
 #### Knowledge distillation
 
+* [Distilling Step-by-Step! Outperforming Larger Lauguage Models with Less Training Data and Smaller Model Sizes](./papers/LLM/distillation/DistillingStepByStep.md) [[paper](https://arxiv.org/abs/2305.02301)] [[code](https://github.com/google-research/distilling-step-by-step)]
+
 * [LaMini-LM: A Diverse Herd of Distilled Models from Large-Scale Instructions](./papers/LLM/distillation/LaMini.md) [[paper](https://arxiv.org/abs/2304.14402)]
 
 * [Zephyr: Direct Distillation of LM Alignment](./papers/LLM/distillation/Zephyr.md) [[paper](https://arxiv.org/abs/2310.16944)] [[code](https://github.com/mbzuai-nlp/LaMini-LM)]

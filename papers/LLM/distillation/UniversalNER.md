@@ -48,6 +48,6 @@
 
    作者基于LLaMA模型微调了UniversalNER，并于ChatGPT、Vicuna、InstructUIE（在各种信息提取数据集上监督微调的模型）进行了对比。
 
-   评测数据使用了9大类的43个命名实体识别数据集。评测结果如下
+   评测数据使用了9大类的43个命名实体识别数据集。评测结果如下，7b、13b的UniversalNER不仅优于Vicuna，还要优于ChatGPT。
 
    ![zeros shot](./assets/uniner_0shot.png)

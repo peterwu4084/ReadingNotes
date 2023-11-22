@@ -2,6 +2,10 @@
 
 ## Paper notes
 
+### Emotion Recognition
+
+* [Emotion Recognition by Video: A Review](./papers/EmotionRecognition/EmotionRecognitionByVideo.md) [[paper](https://arxiv.org/abs/2310.17212)]
+
 ### Large Language Model
 
 * [8-Bit Optimizers via Block-wise Quantization](./papers/LLM/8BitBlockwiseQuantization.md) [[paper](https://arxiv.org/abs/2110.02861v1)][[code](https://github.com/TimDettmers/bitsandbytes)]

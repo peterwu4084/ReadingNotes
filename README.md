@@ -30,6 +30,10 @@
 
 * [Zephyr: Direct Distillation of LM Alignment](./papers/LLM/distillation/Zephyr.md) [[paper](https://arxiv.org/abs/2310.16944)] [[code](https://github.com/mbzuai-nlp/LaMini-LM)]
 
+### Quantization
+
+* [8-Bit Approximations for Parallelism in Deep Learning](./papers/Quantization/8BitApproximations.md) [[paper](https://arxiv.org/abs/2208.07339)]
+
 ## Blog notes
 
 * [GPU Performance Background User's Guide](./blogs/GPUPerformanceBackgroundUserGuide.md) [[blog](https://docs.nvidia.com/deeplearning/performance/dl-performance-gpu-background/index.html#undefined)]

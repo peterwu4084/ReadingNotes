@@ -46,6 +46,9 @@
 
 * TODO [Ray](./blogs/ray/)
 
+### Motion Detection
+
+* [Motion Estimation using Optical FLow](./blogs/MotionDetection/UsingOpticalFlow.md) [[blog](https://www.scaler.com/topics/motion-estimation-using-optical-flow/)]
 ## Book notes
 
 * [thinking in cpp](./books/thinking_in_cpp/)

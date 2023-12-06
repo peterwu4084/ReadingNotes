@@ -49,6 +49,9 @@
 ### Motion Detection
 
 * [Motion Estimation using Optical FLow](./blogs/MotionDetection/UsingOpticalFlow.md) [[blog](https://www.scaler.com/topics/motion-estimation-using-optical-flow/)]
+
+* [Introduction to Motion Estimation with Optical Flow](./blogs/MotionDetection/Intro2MotionEstimationWithOptFlow.md) [[blog](https://nanonets.com/blog/optical-flow/)]
+
 ## Book notes
 
 * [thinking in cpp](./books/thinking_in_cpp/)

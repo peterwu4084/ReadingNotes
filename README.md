@@ -16,6 +16,8 @@
 
 * [LLAMA 2: Open Foundation and Fine-Tuned Chat Models](./papers/LLM/LLAMA2.md) [[paper](https://arxiv.org/abs/2307.09288)][[code](https://github.com/facebookresearch/llama)]
 
+* [Textbooks Are All You Need](./papers/LLM/Phi1.0.md) [[paper](https://arxiv.org/abs/2306.11644s)]
+
 * TODO [Textbooks Are All You Need II: phi-1.5 technical report](./papers/LLM/Phi1.5.md) [[paper](https://arxiv.org/abs/2309.05463)]
 
 #### Knowledge distillation

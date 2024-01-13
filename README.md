@@ -32,6 +32,10 @@
 
 * [Zephyr: Direct Distillation of LM Alignment](./papers/LLM/distillation/Zephyr.md) [[paper](https://arxiv.org/abs/2310.16944)] [[code](https://github.com/mbzuai-nlp/LaMini-LM)]
 
+### Optical Flow
+
+* [Optical Flow Training under Limited Label Budget via Active Learning](./papers/OpticalFlow/ActiveLearning.md) [[paper](https://arxiv.org/abs/2203.05053)] [[code](https://github.com/duke-vision/optical-flow-active-learning-release)]
+
 ### Quantization
 
 * [8-Bit Approximations for Parallelism in Deep Learning](./papers/Quantization/8BitApproximations.md) [[paper](https://arxiv.org/abs/2208.07339)]

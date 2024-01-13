@@ -36,6 +36,10 @@
 
 * [8-Bit Approximations for Parallelism in Deep Learning](./papers/Quantization/8BitApproximations.md) [[paper](https://arxiv.org/abs/2208.07339)]
 
+### Video Codec
+
+* [DVC: An End-to-end Deep Video Compression Framework](./papers/VideoCodec/DVC.md) [[paper](https://arxiv.org/abs/1812.00101)] [[code](https://github.com/GuoLusjtu/DVC)]
+
 ## Blog notes
 
 * [GPU Performance Background User's Guide](./blogs/GPUPerformanceBackgroundUserGuide.md) [[blog](https://docs.nvidia.com/deeplearning/performance/dl-performance-gpu-background/index.html#undefined)]

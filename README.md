@@ -16,7 +16,7 @@
 
 * [LLAMA 2: Open Foundation and Fine-Tuned Chat Models](./papers/LLM/LLAMA2.md) [[paper](https://arxiv.org/abs/2307.09288)][[code](https://github.com/facebookresearch/llama)]
 
-* [Textbooks Are All You Need](./papers/LLM/Phi1.0.md) [[paper](https://arxiv.org/abs/2306.11644s)]
+* TODO [Textbooks Are All You Need](./papers/LLM/Phi1.0.md) [[paper](https://arxiv.org/abs/2306.11644s)]
 
 * TODO [Textbooks Are All You Need II: phi-1.5 technical report](./papers/LLM/Phi1.5.md) [[paper](https://arxiv.org/abs/2309.05463)]
 
@@ -34,15 +34,15 @@
 
 ### Optical Flow
 
-* [Optical Flow Training under Limited Label Budget via Active Learning](./papers/OpticalFlow/ActiveLearning.md) [[paper](https://arxiv.org/abs/2203.05053)] [[code](https://github.com/duke-vision/optical-flow-active-learning-release)]
+* TODO [Optical Flow Training under Limited Label Budget via Active Learning](./papers/OpticalFlow/ActiveLearning.md) [[paper](https://arxiv.org/abs/2203.05053)] [[code](https://github.com/duke-vision/optical-flow-active-learning-release)]
 
 ### Quantization
 
-* [8-Bit Approximations for Parallelism in Deep Learning](./papers/Quantization/8BitApproximations.md) [[paper](https://arxiv.org/abs/2208.07339)]
+* TODO [8-Bit Approximations for Parallelism in Deep Learning](./papers/Quantization/8BitApproximations.md) [[paper](https://arxiv.org/abs/2208.07339)]
 
 ### Video Codec
 
-* [DVC: An End-to-end Deep Video Compression Framework](./papers/VideoCodec/DVC.md) [[paper](https://arxiv.org/abs/1812.00101)] [[code](https://github.com/GuoLusjtu/DVC)]
+* TODO [DVC: An End-to-end Deep Video Compression Framework](./papers/VideoCodec/DVC.md) [[paper](https://arxiv.org/abs/1812.00101)] [[code](https://github.com/GuoLusjtu/DVC)]
 
 ## Blog notes
 

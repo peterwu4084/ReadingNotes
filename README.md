@@ -32,6 +32,9 @@
 
 * [Zephyr: Direct Distillation of LM Alignment](./papers/LLM/distillation/Zephyr.md) [[paper](https://arxiv.org/abs/2310.16944)] [[code](https://github.com/mbzuai-nlp/LaMini-LM)]
 
+### Loss
+
+* TODO [Gaussian Bounding Boxes and Probabilistic Intersection-over-Union for Object Detection](./papers/Loss/probiou.md) [[paper](https://arxiv.org/abs/2106.06072)]
 ### Optical Flow
 
 * TODO [Optical Flow Training under Limited Label Budget via Active Learning](./papers/OpticalFlow/ActiveLearning.md) [[paper](https://arxiv.org/abs/2203.05053)] [[code](https://github.com/duke-vision/optical-flow-active-learning-release)]
